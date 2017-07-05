@@ -18,12 +18,17 @@
 const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Timer.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.importGlobalProperties(["fetch"]);
-const { EventEmitter } = Cu.import("resource://gre/modules/EventEmitter.jsm", {});
+
+XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
+                                  "resource://gre/modules/EventEmitter.jsm");
+// Use standalone kinto-http module landed in FFx.
+XPCOMUtils.defineLazyModuleGetter(this, "KintoHttpClient",
+                                  "resource://services-common/kinto-http-client.js");
+
 const { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 
-// Use standalone kinto-http module landed in FFx.
-const { KintoHttpClient } = Cu.import("resource://services-common/kinto-http-client.js");
 
 import KintoBase from "../src/KintoBase";
 import { RE_UUID } from "../src/utils";
