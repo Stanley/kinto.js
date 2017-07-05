@@ -19,27 +19,43 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
-Cu.importGlobalProperties(["fetch"]);
+Cu.importGlobalProperties(["fetch", "indexedDB"]);
 
 XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
                                   "resource://gre/modules/EventEmitter.jsm");
+
 // Use standalone kinto-http module landed in FFx.
 XPCOMUtils.defineLazyModuleGetter(this, "KintoHttpClient",
                                   "resource://services-common/kinto-http-client.js");
+// Use Sqlite adapter landed in FFx.
+XPCOMUtils.defineLazyModuleGetter(this, "FirefoxAdapter",
+                                  "resource://services-common/kinto-storage-adapter.js");
 
 const { generateUUID } = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator);
 
 
 import KintoBase from "../src/KintoBase";
+import BaseAdapter from "./adapters/base";
+import IDB from "./adapters/IDB";
 import { RE_UUID } from "../src/utils";
 
 
 export default class Kinto extends KintoBase {
+
+  static get adapters() {
+    return {
+      BaseAdapter: BaseAdapter,
+      IDB: IDB,
+      Sqlite: FirefoxAdapter,
+    };
+  }
+
   constructor(options={}) {
     const events = {};
     EventEmitter.decorate(events);
 
     const defaults = {
+      adapter: Kinto.adapters.IDB,
       events,
       ApiClass: KintoHttpClient,
     };
