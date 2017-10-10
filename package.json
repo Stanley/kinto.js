@@ -146,7 +146,7 @@
     "fake-indexeddb": "2.0.3",
     "gh-pages": "^1.0.0",
     "http-server": "^0.10.0",
-    "kinto-node-test-server": "^1.0.0",
+    "kinto-node-test-server": "1.0.1",
     "mocha": "^4.0.0",
     "prettier": "^1.7.2",
     "sinon": "^4.0.0",
