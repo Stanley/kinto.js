@@ -953,26 +953,48 @@ export default class Collection {
     // Optionally ignore some records when pulling for changes.
     // (avoid redownloading our own changes on last step of #sync())
     let filters;
+    let data;
+    let last_modified;
+
     if (options.exclude) {
       // Limit the list of excluded records to the first 50 records in order
       // to remain under de-facto URL size limit (~2000 chars).
       // http://stackoverflow.com/questions/417142/what-is-the-maximum-length-of-a-url-in-different-browsers/417184#417184
       const exclude_id = options.exclude
-        .slice(0, 50)
         .map(r => r.id)
         .join(",");
       filters = { exclude_id };
+
+      const response = (await client.batch(
+        batch => {
+          batch.listRecords({
+            since: options.lastModified ? `${options.lastModified}` : undefined,
+            pages: Infinity,
+            filters,
+          })
+        },
+        {
+          headers: options.headers,
+          retry: options.retry,
+        },
+      ))[0]
+
+      data = response.body.data
+      last_modified = response.headers['ETag'].replace(/"/g, "")
+
+    } else {
+      // First fetch remote changes from the server
+      const response = await client.listRecords({
+        // Since should be ETag (see https://github.com/Kinto/kinto.js/issues/356)
+        since: options.lastModified ? `${options.lastModified}` : undefined,
+        headers: options.headers,
+        retry: options.retry,
+        // Fetch every page by default (FIXME: option to limit pages, see #277)
+        pages: Infinity,
+      });
+      data = response.data
+      last_modified = response.last_modified
     }
-    // First fetch remote changes from the server
-    const { data, last_modified } = await client.listRecords({
-      // Since should be ETag (see https://github.com/Kinto/kinto.js/issues/356)
-      since: options.lastModified ? `${options.lastModified}` : undefined,
-      headers: options.headers,
-      retry: options.retry,
-      // Fetch every page by default (FIXME: option to limit pages, see #277)
-      pages: Infinity,
-      filters,
-    });
     // last_modified is the ETag header value (string).
     // For retro-compatibility with first kinto.js versions
     // parse it to integer.
